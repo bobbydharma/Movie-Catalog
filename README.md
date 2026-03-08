@@ -18,7 +18,6 @@ The project follows **Clean Architecture** principles and is modularized by feat
 - `:feature:movie` - Contains the UI (Presentation), Domain, and Data layers specific to the movie feature (Home and Movie Details).
 - `:core:network` - Handles all API communication and network configurations.
 - `:core:database` - Manages local data persistence using Room for offline caching.
-- `:core:security` - Manages local data encryption and secure key storage.
 
 The presentation layer utilizes the **MVI (Model-View-Intent)** pattern integrated with Jetpack Compose State Management and Kotlin Flows to handle UI state predictably and ensure strict Unidirectional Data Flow (UDF).
 
@@ -34,7 +33,6 @@ The presentation layer utilizes the **MVI (Model-View-Intent)** pattern integrat
     - [Chucker](https://github.com/ChuckerTeam/chucker) for on-device network inspection.
 - **Local Database (Caching)**: [Room](https://developer.android.com/training/data-storage/room) for offline support and caching network responses.
 - **Pagination**: [Paging 3](https://developer.android.com/topic/libraries/architecture/paging/v3-overview) utilizing `RemoteMediator` to seamlessly load and cache paginated data from the network into the local database.
-- **Security**: [AndroidX Security Crypto](https://developer.android.com/topic/security/data) for EncryptedSharedPreferences (AES-256).
 - **Image Loading**: [Coil Compose](https://coil-kt.github.io/coil/compose/) for fast, lightweight image loading.
 - **Serialization**: [Kotlinx Serialization](https://kotlinlang.org/docs/serialization.html) for fast JSON parsing and Type-Safe Navigation.
 - **In-App Navigation**: [Navigation Compose](https://developer.android.com/jetpack/compose/navigation) for navigating between Compose screens.
