@@ -6,4 +6,6 @@ object MovieRoute{
     @Serializable
     data object MovieList
 
+    @Serializable
+    data class MovieDetail(val movieId: String)
 }

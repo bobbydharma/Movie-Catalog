@@ -9,6 +9,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.GridItemSpan
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
@@ -20,13 +21,12 @@ import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.HorizontalDivider
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
-import androidx.compose.material3.SecondaryScrollableTabRow
+import androidx.compose.material3.SecondaryTabRow
 import androidx.compose.material3.Tab
 import androidx.compose.material3.TabRowDefaults
 import androidx.compose.material3.Text
-import androidx.compose.material3.TopAppBar
-import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.material3.pulltorefresh.PullToRefreshDefaults
 import androidx.compose.material3.pulltorefresh.pullToRefresh
 import androidx.compose.material3.pulltorefresh.rememberPullToRefreshState
@@ -55,7 +55,6 @@ import com.example.movie.home.presentation.component.MovieCardItem
 import com.example.movie.home.presentation.model.MovieCategory
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.launch
-import kotlin.collections.get
 
 @Composable
 fun MovieListRoute(
@@ -93,20 +92,22 @@ fun MovieListScreen(
     Scaffold(
         modifier = modifier,
         topBar = {
-            Column {
-                TopAppBar(
-                    title = { Text("Movies", fontWeight = FontWeight.Bold) },
-                    colors = TopAppBarDefaults.topAppBarColors(
-                        containerColor = Color(0xFF0B101A),
-                        titleContentColor = Color.White
-                    )
+            Column(
+                modifier = Modifier.statusBarsPadding()
+            ) {
+                Text(
+                    text = "Movies",
+                    fontWeight = FontWeight.Bold,
+                    color = Color.White,
+                    style = MaterialTheme.typography.headlineSmall,
+                    modifier = Modifier
+                        .padding(start = 16.dp, top = 16.dp, bottom = 4.dp)
                 )
 
-                SecondaryScrollableTabRow(
+                SecondaryTabRow(
                     selectedTabIndex = pagerState.currentPage,
                     containerColor = Color(0xFF0B101A),
                     contentColor = Color.White,
-                    edgePadding = 16.dp,
                     indicator = {
                         TabRowDefaults.SecondaryIndicator(
                             modifier = Modifier.tabIndicatorOffset(pagerState.currentPage),
@@ -170,7 +171,10 @@ fun MovieListContent(
     modifier: Modifier = Modifier
 ) {
     var isManualRefreshing by remember { mutableStateOf(false) }
+
     val isInitialLoading = moviesPagingItems.loadState.refresh is LoadState.Loading && moviesPagingItems.itemCount == 0
+    val isError = moviesPagingItems.loadState.refresh is LoadState.Error && moviesPagingItems.itemCount == 0
+
     val pullToRefreshState = rememberPullToRefreshState()
     val gridState = rememberLazyGridState()
     val isAtTop = !gridState.canScrollBackward
@@ -194,86 +198,74 @@ fun MovieListContent(
                 enabled = isAtTop
             )
     ) {
-        LazyVerticalGrid(
-            state = gridState,
-            columns = GridCells.Adaptive(minSize = 160.dp),
-            contentPadding = PaddingValues(16.dp),
-            modifier = Modifier.fillMaxSize()
-        ) {
-            items(
-                count = moviesPagingItems.itemCount,
-                key = moviesPagingItems.itemKey { it.id },
-                contentType = moviesPagingItems.itemContentType { "Movie" }
-            ) { index ->
-                val movie = moviesPagingItems[index]
-                if (movie != null) {
-                    MovieCardItem(
-                        movie = movie,
-                        onClick = onMovieClick
-                    )
+        if (!isInitialLoading && !isError) {
+            LazyVerticalGrid(
+                state = gridState,
+                columns = GridCells.Adaptive(minSize = 160.dp),
+                contentPadding = PaddingValues(16.dp),
+                modifier = Modifier.fillMaxSize()
+            ) {
+                items(
+                    count = moviesPagingItems.itemCount,
+                    key = moviesPagingItems.itemKey { it.id },
+                    contentType = moviesPagingItems.itemContentType { "Movie" }
+                ) { index ->
+                    val movie = moviesPagingItems[index]
+                    if (movie != null) {
+                        MovieCardItem(
+                            movie = movie,
+                            onClick = onMovieClick
+                        )
+                    }
                 }
-            }
 
-            moviesPagingItems.apply {
-                when {
-                    isInitialLoading -> {
-                        item(span = { GridItemSpan(maxLineSpan) }) {
-                            Box(
-                                modifier = Modifier
-                                    .fillMaxSize()
-                                    .padding(top = 100.dp),
-                                contentAlignment = Alignment.Center
-                            ) {
-                                CircularProgressIndicator(color = Color(0xFF00E5FF))
-                            }
-                        }
-                    }
-
-                    loadState.append is LoadState.Loading -> {
-                        item(span = { GridItemSpan(maxLineSpan) }) {
-                            Box(
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .padding(16.dp),
-                                contentAlignment = Alignment.Center
-                            ) {
-                                CircularProgressIndicator(color = Color(0xFF00E5FF))
-                            }
-                        }
-                    }
-
-                    loadState.refresh is LoadState.Error -> {
-                        if (moviesPagingItems.itemCount == 0) {
-                            item(span = { GridItemSpan(maxLineSpan) }) {
-                                Column(
-                                    modifier = Modifier
-                                        .fillMaxSize()
-                                        .padding(32.dp)
-                                        .padding(top = 100.dp),
-                                    horizontalAlignment = Alignment.CenterHorizontally,
-                                    verticalArrangement = Arrangement.Center
-                                ) {
-                                    Text(
-                                        text = "Gagal memuat data. Periksa koneksi Anda.",
-                                        color = Color.White
-                                    )
-                                    Spacer(modifier = Modifier.height(16.dp))
-                                    Button(
-                                        onClick = { retry() },
-                                        colors = ButtonDefaults.buttonColors(
-                                            containerColor = Color(0xFF00E5FF),
-                                            contentColor = Color.Black
-                                        )
-                                    ) {
-                                        Text("Coba Lagi")
-                                    }
-                                }
-                            }
+                if (moviesPagingItems.loadState.append is LoadState.Loading) {
+                    item(span = { GridItemSpan(maxLineSpan) }) {
+                        Box(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(16.dp),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            CircularProgressIndicator(color = Color(0xFF00E5FF))
                         }
                     }
                 }
             }
         }
+
+        if (isInitialLoading) {
+            Box(
+                modifier = Modifier.fillMaxSize(),
+                contentAlignment = Alignment.Center
+            ) {
+                CircularProgressIndicator(color = Color(0xFF00E5FF))
+            }
+        }
+
+        if (isError) {
+            Column(
+                modifier = Modifier.fillMaxSize(),
+                horizontalAlignment = Alignment.CenterHorizontally,
+                verticalArrangement = Arrangement.Center
+            ) {
+                Text(
+                    text = "Gagal memuat data. Periksa koneksi Anda.",
+                    color = Color.White
+                )
+                Spacer(modifier = Modifier.height(16.dp))
+                Button(
+                    onClick = { moviesPagingItems.retry() },
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = Color(0xFF00E5FF),
+                        contentColor = Color.Black
+                    )
+                ) {
+                    Text("Coba Lagi")
+                }
+            }
+        }
+
         PullToRefreshDefaults.Indicator(
             state = pullToRefreshState,
             isRefreshing = isManualRefreshing,
@@ -324,6 +316,6 @@ fun MovieListContentPreview() {
 
     MovieListContent(
         moviesPagingItems = dummyPagingItems,
-        onMovieClick = { /* Do nothing di preview */ }
+        onMovieClick = {}
     )
 }
