@@ -7,5 +7,6 @@ import androidx.room.PrimaryKey
 data class RemoteKeyEntity(
     @PrimaryKey val id: String,
     val prevKey: Int?,
-    val nextKey: Int?
+    val nextKey: Int?,
+    val updatedAt: Long = System.currentTimeMillis()
 )

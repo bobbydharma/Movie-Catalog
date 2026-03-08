@@ -14,6 +14,7 @@ import com.example.movie.home.data.mapper.toEntity
 import com.example.movie.home.presentation.model.MovieCategory
 import com.example.network.api.MovieApiService
 import java.io.IOException
+import java.util.concurrent.TimeUnit
 
 @OptIn(ExperimentalPagingApi::class)
 class MovieRemoteMediator(
@@ -21,6 +22,20 @@ class MovieRemoteMediator(
     private val db: MovieDatabase,
     private val category: String
 ) : RemoteMediator<Int, MovieEntity>() {
+
+    override suspend fun initialize(): InitializeAction {
+        val cacheTimeout = TimeUnit.MILLISECONDS.convert(1, TimeUnit.HOURS)
+
+        val remoteKey = db.remoteKeyDao().getRemoteKey(category)
+        val lastUpdated = remoteKey?.updatedAt ?: 0L
+        val now = System.currentTimeMillis()
+
+        return if (now - lastUpdated <= cacheTimeout) {
+            InitializeAction.SKIP_INITIAL_REFRESH
+        } else {
+            InitializeAction.LAUNCH_INITIAL_REFRESH
+        }
+    }
 
     override suspend fun load(loadType: LoadType, state: PagingState<Int, MovieEntity>): MediatorResult {
         val page = when (loadType) {
